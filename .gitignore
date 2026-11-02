@@ -1,0 +1,8 @@
+node_modules/
+.claude-plugin/types/
+.mcpb-cache/
+dist/
+out/
+.DS_Store
+*.log
+hooks/**/*.js

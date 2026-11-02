@@ -1,0 +1,12 @@
+{
+  "name": "git-graph",
+  "version": "1.0.0",
+  "description": "A Git Graph pane beside the chat: coloured commit lanes, branch, tag and worktree chips, and checkout, merge, rebase, delete and clean-up from the graph.",
+  "author": { "name": "owlcode", "url": "https://github.com/owlcode" },
+  "homepage": "https://github.com/owlcode/claude-git-graph",
+  "repository": "https://github.com/owlcode/claude-git-graph",
+  "license": "MIT",
+  "keywords": ["git", "graph", "worktrees", "branches", "pane", "mod"],
+  "icon": "./assets/icon.png",
+  "types": "./types/index.d.ts"
+}

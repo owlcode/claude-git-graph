@@ -1,0 +1,16 @@
+{
+  "name": "claude-git-graph",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Git Graph pane for Claude Code: commit lanes, worktrees and git actions beside the chat",
+  "license": "MIT",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "claude plugin test .",
+    "validate": "claude plugin validate .",
+    "preview": "bun scripts/preview.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+      - name: The tag matches the manifest's version
+        run: |
+          version=$(node -p "require('./.claude-plugin/plugin.json').version")
+          test "v$version" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, plugin.json $version"; exit 1; }
+      - run: claude plugin validate .
+      - run: claude plugin test .
+      - name: Package the mod as git-graph.plugin
+        run: |
+          mkdir -p out/git-graph
+          git archive HEAD | tar -x -C out/git-graph
+          rm -rf out/git-graph/.github out/git-graph/scripts out/git-graph/docs
+          (cd out/git-graph && zip -qr ../git-graph.plugin .)
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="${GITHUB_REF_NAME#v}" '$0 ~ "^## " {p = ($2 == v)} p' CHANGELOG.md | tail -n +2 > notes.md
+          test -s notes.md || echo "See CHANGELOG.md." > notes.md
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" out/git-graph.plugin --title "$GITHUB_REF_NAME" --notes-file notes.md

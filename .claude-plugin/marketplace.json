@@ -1,0 +1,14 @@
+{
+  "name": "claude-git-graph",
+  "description": "The git-graph mod for Claude Code: a Git Graph pane beside the chat.",
+  "owner": {
+    "name": "owlcode",
+    "url": "https://github.com/owlcode"
+  },
+  "plugins": [
+    {
+      "name": "git-graph",
+      "source": "./"
+    }
+  ]
+}
