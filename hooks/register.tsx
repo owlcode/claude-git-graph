@@ -139,13 +139,22 @@ const setMenuError = ($: EngineInterface, error: string, abort: AbortPlan | null
 const said = (result: { exitCode: number; stdout: string; stderr: string }, what: string): string =>
   `${result.stdout.trim()}\n${result.stderr.trim()}`.trim() || `${what} exited ${result.exitCode}`
 
-/** Merges a branch, remote branch or commit into the branch the session is on, unless its worktree has changes. */
+/**
+ * Changed tracked files in the session's worktree. Untracked files are left out: merge, rebase, pull and
+ * switch run fine beside them, and git itself refuses when one would be overwritten.
+ */
+const trackedChanges = (data: GitGraphData): number => ownWorktree(data.worktrees, data.cwd)?.modified ?? data.uncommitted
+
+const dirtyText = (count: number): string =>
+  `${count} tracked ${count === 1 ? 'file has' : 'files have'} changes here: commit or stash ${count === 1 ? 'it' : 'them'} first.`
+
+/** Merges a branch, remote branch or commit into the branch the session is on, unless its tracked files have changes. */
 async function mergeRef($: EngineInterface, ref: string): Promise<void> {
   const data = await read($, dataAtom)
   const current = ownWorktree(data.worktrees, data.cwd)?.branch ?? null
   if (current === null) return
-  if (data.uncommitted > 0) {
-    await setMenuError($, 'Commit or stash the changes in this worktree first.', null)
+  if (trackedChanges(data) > 0) {
+    await setMenuError($, dirtyText(trackedChanges(data)), null)
     return
   }
   const cwd = await $.session.cwd()
@@ -185,8 +194,8 @@ async function rebaseOnto($: EngineInterface, branch: string): Promise<void> {
   const run = runner($)
   const cwd = await $.session.cwd()
   const tree = data.worktrees.find(one => one.branch === branch)
-  if (tree !== undefined && (tree.modified > 0 || tree.untracked > 0)) {
-    await setMenuError($, `${tree.path} has uncommitted changes: commit or stash them first.`, null)
+  if (tree !== undefined && tree.modified > 0) {
+    await setMenuError($, `${tree.path} has changes to tracked files: commit or stash them first.`, null)
     return
   }
   const backup = await run(['git', 'update-ref', `refs/git-graph/backup/${branch}`, `refs/heads/${branch}`], cwd)
@@ -308,8 +317,8 @@ async function rebaseCurrentOnto($: EngineInterface): Promise<void> {
   const data = await read($, dataAtom)
   const current = ownWorktree(data.worktrees, data.cwd)?.branch ?? null
   if (current === null) return
-  if (data.uncommitted > 0) {
-    await setConfirm($, { error: 'Commit or stash the changes in this worktree first.' })
+  if (trackedChanges(data) > 0) {
+    await setConfirm($, { error: dirtyText(trackedChanges(data)) })
     return
   }
   await setConfirm($, { isBusy: true, error: null })
@@ -385,10 +394,10 @@ async function checkoutFromDetail($: EngineInterface, ref: string, hash: string,
     canAbort: false,
     mode,
     stash: false,
-    changed: data.uncommitted,
+    changed: trackedChanges(data),
   }
   await update($, confirmAtom, () => ask)
-  if (mode !== 'detach' && data.uncommitted === 0) await runCheckout($)
+  if (mode !== 'detach' && trackedChanges(data) === 0) await runCheckout($)
 }
 
 const checkoutArgv = (ask: DetailConfirm): string[] =>
@@ -403,7 +412,7 @@ async function runCheckout($: EngineInterface): Promise<void> {
   const cwd = await $.session.cwd()
   const label = ask.mode === 'detach' ? ask.branch.slice(0, 7) : ask.branch
   if (ask.stash) {
-    const stashed = await run(['git', 'stash', 'push', '--include-untracked', '-m', `git-graph: before checking out ${label}`], cwd)
+    const stashed = await run(['git', 'stash', 'push', '-m', `git-graph: before checking out ${label}`], cwd)
     if (stashed.exitCode !== 0) {
       await setConfirm($, { isBusy: false, error: said(stashed, 'git stash') })
       return
@@ -431,8 +440,8 @@ async function mergeFromDetail($: EngineInterface, ref: string): Promise<void> {
   const data = await read($, dataAtom)
   const current = ownWorktree(data.worktrees, data.cwd)?.branch ?? null
   if (current === null) return
-  if (data.uncommitted > 0) {
-    $.ui.toast('Commit or stash the changes in this worktree first.')
+  if (trackedChanges(data) > 0) {
+    $.ui.toast(dirtyText(trackedChanges(data)))
     return
   }
   const result = await runner($)(['git', 'merge', '--no-edit', ref], await $.session.cwd())
@@ -481,8 +490,8 @@ async function fetchAndPull($: EngineInterface): Promise<void> {
     const upstream = await run(['git', 'rev-parse', '--abbrev-ref', '@{upstream}'], cwd)
     if (own?.branch == null || upstream.exitCode !== 0) {
       $.ui.toast('Fetched; this branch has no upstream to pull from')
-    } else if (data.uncommitted > 0) {
-      $.ui.toast(`Fetched; not pulled: ${data.uncommitted} changed files here`)
+    } else if (trackedChanges(data) > 0) {
+      $.ui.toast(`Fetched; not pulled: ${trackedChanges(data)} changed tracked files here`)
     } else {
       const pulled = await run(['git', 'pull', '--ff-only'], cwd)
       $.ui.toast(
@@ -1317,8 +1326,8 @@ export const register: Register = on => {
                         act.holder !== null
                           ? `${act.ref} is checked out in ${act.holder}: copies its cd`
                           : act.isRemote
-                            ? `Check out ${act.ref} here as a local branch tracking it (git switch --track)${data.uncommitted > 0 ? '; asks about your changes' : ''}`
-                            : `Check out ${act.ref} here (git switch)${data.uncommitted > 0 ? '; asks about your changes' : ''}`,
+                            ? `Check out ${act.ref} here as a local branch tracking it (git switch --track)${trackedChanges(data) > 0 ? '; asks about your changes' : ''}`
+                            : `Check out ${act.ref} here (git switch)${trackedChanges(data) > 0 ? '; asks about your changes' : ''}`,
                         () => void checkoutFromDetail($, act.ref, commit.hash, 'terminal'),
                         act.holder !== null ? 'Copy cd' : 'Check out',
                       )}

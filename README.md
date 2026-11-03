@@ -50,12 +50,12 @@ The pane reads freely and writes only when you press something. Every git comman
 
 | Action | What runs | Guard |
 | --- | --- | --- |
-| Check out a branch | `git switch <branch>` (a remote-only one: `git switch --track <remote>/<branch>`) | With changes here it asks first and offers `git stash push -u`, popped back if the switch fails. A branch another worktree has checked out cannot be switched to, so its icon copies `cd <that worktree>` instead. |
+| Check out a branch | `git switch <branch>` (a remote-only one: `git switch --track <remote>/<branch>`) | With changes to tracked files here it asks first and offers `git stash push`, popped back if the switch fails. A branch another worktree has checked out cannot be switched to, so its icon copies `cd <that worktree>` instead. |
 | Check out a commit | `git switch --detach <hash>` | Always asks first. |
-| Merge | `git merge --no-edit <ref>` in the session's worktree | Refused while that worktree has changes; on conflicts offers `git merge --abort`. |
-| Rebase | `git rebase <onto>` | Asks first, keeps the old tip as `refs/git-graph/backup/<branch>`, refused with changes, offers `git rebase --abort`. A branch no worktree has is rebased in a temporary worktree, so your checkout never moves. |
+| Merge | `git merge --no-edit <ref>` in the session's worktree | Refused while that worktree has changes to tracked files (untracked files are fine: git refuses by itself if one would be overwritten); on conflicts offers `git merge --abort`. |
+| Rebase | `git rebase <onto>` | Asks first, keeps the old tip as `refs/git-graph/backup/<branch>`, refused with changes to tracked files, offers `git rebase --abort`. A branch no worktree has is rebased in a temporary worktree, so your checkout never moves. |
 | Delete a branch | `git branch -d`, and `git push <remote> --delete` only when you tick it | Asks first; never `-D`, so git refuses an unmerged or checked-out branch. |
-| Pull & Fetch | `git fetch --all --prune`, then `git pull --ff-only` | Never merges or rebases; skips the pull with changes here. |
+| Pull & Fetch | `git fetch --all --prune`, then `git pull --ff-only` | Never merges or rebases; skips the pull with changes to tracked files here. |
 | Clean up | `git worktree prune`, `git worktree remove`, `git branch -d` | Shows the plan first, each row can be switched off, nothing runs until you press **Remove N**, stops at the first failure. |
 
 Nothing is ever forced: no `--force`, `-f` or `-D` anywhere.

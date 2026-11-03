@@ -18,15 +18,16 @@ const wt = (path: string, branch: string, head: string, isMain = false) => ({
   ahead: null, behind: null, modified: 0, untracked: 0,
 })
 
-const data = (uncommitted: number, isDemoHeld = true): GitGraphData => ({
+/** `uncommitted` counts changed tracked files in the session's worktree; `untracked` adds files git does not track. */
+const data = (uncommitted: number, isDemoHeld = true, untracked = 0): GitGraphData => ({
   cwd: '/repo',
   repoRoot: '/repo',
   headHash: 'b'.repeat(40),
-  uncommitted,
+  uncommitted: uncommitted + untracked,
   hasMore: false,
   worktreeBases: [],
   error: null,
-  worktrees: [wt('/repo', 'main', 'b'.repeat(40), true), ...(isDemoHeld ? [wt('/repo-wt', 'demo', 'a'.repeat(40))] : [])],
+  worktrees: [{ ...wt('/repo', 'main', 'b'.repeat(40), true), modified: uncommitted, untracked }, ...(isDemoHeld ? [wt('/repo-wt', 'demo', 'a'.repeat(40))] : [])],
   commits: [
     { hash: 'a'.repeat(40), parents: ['b'.repeat(40)], refs: [{ kind: 'branch', name: 'demo' }], subject: 'work', author: 'Ann', date: 'now' },
     { hash: 'b'.repeat(40), parents: [], refs: [{ kind: 'head', name: 'HEAD' }, { kind: 'branch', name: 'main', isCurrent: true }], subject: 'first', author: 'Ann', date: 'now' },
@@ -55,14 +56,14 @@ function fakeGit(argv: readonly string[]): { exitCode: number; stdout: string; s
 }
 
 /** The snapshot is seeded through `state.get` until the pane writes its own; other keys fall to the kit's in-memory `$.state`. */
-function seed(on: TestOn, uncommitted: number, isDemoHeld = true) {
+function seed(on: TestOn, uncommitted: number, isDemoHeld = true, untracked = 0) {
   let isWritten = false
   on('state.set', (_, e, next) => {
     if (e.key === 'data') isWritten = true
     return next(e)
   })
   on('state.get', (_, e, next) =>
-    e.key === 'data' && !isWritten ? { value: { value: { shape: 'data-3', value: data(uncommitted, isDemoHeld) }, version: 1 } } : next(e),
+    e.key === 'data' && !isWritten ? { value: { value: { shape: 'data-3', value: data(uncommitted, isDemoHeld, untracked) }, version: 1 } } : next(e),
   )
 }
 
@@ -116,8 +117,18 @@ test('Merge is refused while the session worktree has changes', async ($, on) =>
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
   await rightClick(ui, A)
   await ui.press({ key: MERGE_DEMO })
-  expect(await ui.find({ type: 'Text', text: /Commit or stash/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /2 tracked files have changes here: commit or stash them first/ })).toBeDefined()
   expect(calls.filter(one => one.includes('merge'))).toEqual([])
+  await ui.unmount()
+})
+
+test('untracked files alone do not stop a merge: git refuses by itself if one would be overwritten', async ($, on) => {
+  seed(on, 0, true, 1)
+  const calls = standIns(on, fakeGit)
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await rightClick(ui, A)
+  await ui.press({ key: MERGE_DEMO })
+  expect(calls).toContain('git merge --no-edit demo')
   await ui.unmount()
 })
 
@@ -301,7 +312,7 @@ test('checkout with changes here asks first, and can stash them before switching
   expect(calls.some(one => one.startsWith('git switch'))).toBe(false)
   await ui.press({ key: 'confirm:stash' })
   await ui.press({ key: 'confirm:yes' })
-  const stash = calls.findIndex(one => one.startsWith('git stash push --include-untracked'))
+  const stash = calls.findIndex(one => one.startsWith('git stash push -m'))
   expect(stash).toBeGreaterThan(-1)
   expect(calls.indexOf('git switch demo')).toBeGreaterThan(stash)
   await ui.unmount()
