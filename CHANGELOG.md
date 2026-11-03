@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3
+
+- Untracked files no longer block merge, rebase, pull or checkout: only changes to tracked files do, and the message says how many. Git itself still refuses when an untracked file would be overwritten.
+- Stashing before a checkout leaves untracked files where they are.
+
 ## 1.0.2
 
 - Outside a git repository the pane names the session's folder and says how to get a graph: start the session in a repository, or run `git init` there.
