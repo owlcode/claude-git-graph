@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+- Outside a git repository the pane names the session's folder and says how to get a graph: start the session in a repository, or run `git init` there.
+
 ## 1.0.1
 
 - The band above the prompt is gone: the pane opens with `/gitgraph` and lives beside the chat only.

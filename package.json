@@ -1,6 +1,6 @@
 {
   "name": "claude-git-graph",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Git Graph pane for Claude Code: commit lanes, worktrees and git actions beside the chat",
   "license": "MIT",
