@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- The band above the prompt is gone: the pane opens with `/gitgraph` and lives beside the chat only.
+
 ## 1.0.0
 
 First public release.
