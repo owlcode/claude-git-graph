@@ -1035,7 +1035,17 @@ export const register: Register = on => {
         <Box flexDirection="column" gap={1}>
           {header}
           {data.error !== null && <Text color="#ed93b1">{data.error}</Text>}
-          <Text dimColor>{data.cwd === '' ? 'Loading…' : 'Not inside a git repository.'}</Text>
+          {data.cwd === '' ? (
+            <Text dimColor>Loading…</Text>
+          ) : (
+            <Box flexDirection="column">
+              <Text>This session's folder is not inside a git repository:</Text>
+              <Text bold wrap="truncate-start">{data.cwd}</Text>
+              <Text dimColor wrap="wrap">
+                Start a Claude Code session in a repository's folder (or one of its worktrees), or run `git init` here to make this folder one. The pane picks it up within 5 seconds.
+              </Text>
+            </Box>
+          )}
         </Box>
       )
     }

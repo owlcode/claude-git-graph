@@ -343,3 +343,15 @@ test('however many commits are loaded, the desktop pane stays under the 262144 c
   expect(await ui.find({ type: 'Button', key: 'more' })).toBeUndefined()
   await ui.unmount()
 })
+
+test('outside a repository the pane names the folder and says how to get a graph', async ($, on) => {
+  const outside: GitGraphData = { ...DATA, cwd: '/Users/ann/notes', repoRoot: null, worktrees: [], commits: [], worktreeBases: [] }
+  on('state.get', (_: unknown, e: { key: string }) => ({
+    value: e.key === 'data' ? { value: { shape: 'data-3', value: outside }, version: 1 } : { value: undefined, version: 0 },
+  }))
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: /not inside a git repository/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '/Users/ann/notes' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /git init/ })).toBeDefined()
+  await ui.unmount()
+})
