@@ -33,7 +33,7 @@ In the desktop app, where `/plugin` does not run: click **+** next to the prompt
 
 ## Use it
 
-Run `/gitgraph`, or press **⎇ Git graph** in the band above the prompt. The band also shows the session's branch, `↑N ↓M` against its upstream, `clean` / `N changed` and the worktree count.
+Run `/gitgraph` to open the pane beside the chat. It stays out of the way otherwise: nothing is added above the prompt.
 
 - **The graph.** One colour per lane, curved fork and merge lines, and chips for every branch, remote branch, tag and worktree on a commit (`▤ name`, `✦` for the session's own worktree, a dim `▤ name ⤴` where a worktree's branch left the default branch). Hover the chips for a card that names each one in full and says what it is.
 - **Columns.** Graph, Description, Date, Author and Commit. The **columns** icon shows or hides them; drag the edge between two columns (it lights up `┃`) to resize. The graph column clips its lanes, so 50 parallel branches never push the text off screen.
@@ -87,7 +87,7 @@ pnpm typecheck   # tsc -p . (needs the types Claude Code writes to .claude-plugi
 pnpm preview     # redraws docs/preview-*.svg (needs bun)
 ```
 
-Layout: `hooks/register.tsx` is the mod (pane, band, command, actions); `hooks/git/` holds the pure parts (log parsing, graph layout, chips, clean-up planning), each with its tests; `hooks/row.tsx`, `hooks/icon.tsx` and `hooks/resize.tsx` are the client modules that read the pointer. CI runs validate and test on every push; a `v*` tag publishes a release with a `.plugin` archive.
+Layout: `hooks/register.tsx` is the mod (pane, command, actions); `hooks/git/` holds the pure parts (log parsing, graph layout, chips, clean-up planning), each with its tests; `hooks/row.tsx`, `hooks/icon.tsx` and `hooks/resize.tsx` are the client modules that read the pointer. CI runs validate and test on every push; a `v*` tag publishes a release with a `.plugin` archive.
 
 ## License
 

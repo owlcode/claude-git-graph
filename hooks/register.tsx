@@ -641,42 +641,6 @@ export const register: Register = on => {
     return next(e)
   })
 
-  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.props.hasSurvey) return next(e)
-    const { Box, Text, Button } = $.ui.resolve(e)
-    const data = await read($, dataAtom)
-    const isOpen = await read($, isOpenAtom)
-
-    if (data.cwd !== '' && data.repoRoot === null) {
-      return (
-        <Box flexDirection="row" gap={1}>
-          <Text dimColor>⎇ no repository</Text>
-        </Box>
-      )
-    }
-    const launcher = (
-      <Button key="git-graph" plain dimColor={isOpen} onPress={() => void open($, true)}>
-        {isOpen ? '⎇ Git graph ·' : '⎇ Git graph'}
-      </Button>
-    )
-    if (data.cwd === '') return <Box flexDirection="row" gap={1}>{launcher}</Box>
-
-    const own = ownWorktree(data.worktrees, data.cwd)
-    const branch = own?.branch ?? (own ? `(detached ${own.head.slice(0, 7)})` : '')
-    const sync = own && own.ahead !== null && own.behind !== null ? `↑${own.ahead} ↓${own.behind}` : ''
-    const changed = data.uncommitted === 0 ? 'clean' : `${data.uncommitted} changed`
-    const columns = e.viewport?.columns
-    const summary = [ellipsise(branch, columns === undefined ? 40 : Math.max(12, Math.min(40, columns - 40))), sync, changed, `${data.worktrees.length} worktrees`]
-      .filter(part => part !== '')
-      .join('  ')
-    return (
-      <Box flexDirection="row" gap={1}>
-        {launcher}
-        <Text dimColor wrap="truncate-end">{summary}</Text>
-      </Box>
-    )
-  })
-
   // Only watches (a command may have moved a branch): a failure here never blocks or changes a Bash call.
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const ran = await next(e)
